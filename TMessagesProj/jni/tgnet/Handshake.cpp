@@ -374,15 +374,16 @@ void Handshake::processHandshakeResponse_resPQ(TLObject *message, int64_t messag
                                                   "-----END RSA PUBLIC KEY-----");
                     serverPublicKeysFingerprints.push_back(0xb25898df208d2603);
                 } else {
+                    // iggygram: the iggygram server's key (admin keys show).
                     serverPublicKeys.emplace_back("-----BEGIN RSA PUBLIC KEY-----\n"
-                                                  "MIIBCgKCAQEA6LszBcC1LGzyr992NzE0ieY+BSaOW622Aa9Bd4ZHLl+TuFQ4lo4g\n"
-                                                  "5nKaMBwK/BIb9xUfg0Q29/2mgIR6Zr9krM7HjuIcCzFvDtr+L0GQjae9H0pRB2OO\n"
-                                                  "62cECs5HKhT5DZ98K33vmWiLowc621dQuwKWSQKjWf50XYFw42h21P2KXUGyp2y/\n"
-                                                  "+aEyZ+uVgLLQbRA1dEjSDZ2iGRy12Mk5gpYc397aYp438fsJoHIgJ2lgMv5h7WY9\n"
-                                                  "t6N/byY9Nw9p21Og3AoXSL2q/2IJ1WRUhebgAdGVMlV1fkuOQoEzR7EdpqtQD9Cs\n"
-                                                  "5+bfo3Nhmcyvk5ftB0WkJ9z6bNZ7yxrP8wIDAQAB\n"
+                                                  "MIIBCgKCAQEApwoIT5FbNqiNm/Cyx1GCbcYuWqtuhft2f9y+AuJieNw81C6gqHma\n"
+                                                  "sW5CVPVUwbXEYJvDs52tAzZjyUwdxk4/k3+RS7qV/itJkjAW4kSYkK73gxZWtM4x\n"
+                                                  "hCAzGYdh+NsBQlZmatcOWXLrm/bjXP8pAOIEb5RASlLnTibk4jkWE3g2l1dm9iCH\n"
+                                                  "QgsmQGg3jsYHKcqKByHpsXMPin+UIp4KchcZbWOGKTIlen5LZTkaF+cvN4tMZgge\n"
+                                                  "fyfiX6lZ+8bhc9dmP8MjDJau6dfXy+3rbQWQz0iraPm2k2wG8PRMMTu7/+bxVNsK\n"
+                                                  "iZMozXMHp3kq86vq+Urb97Wj+EzQqF8ceQIDAQAB\n"
                                                   "-----END RSA PUBLIC KEY-----");
-                    serverPublicKeysFingerprints.push_back(0xd09d1d85de64fd85);
+                    serverPublicKeysFingerprints.push_back(0x363cae41d03d1d6b);
                 }
             }
 

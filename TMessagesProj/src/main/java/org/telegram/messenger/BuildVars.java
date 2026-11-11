@@ -22,12 +22,13 @@ public class BuildVars {
     public static boolean LOGS_ENABLED = BuildConfig.DEBUG_VERSION;
     public static boolean DEBUG_PRIVATE_VERSION = BuildConfig.DEBUG_PRIVATE_VERSION;
     public static boolean USE_CLOUD_STRINGS = true;
-    public static boolean CHECK_UPDATES = true;
+    public static boolean CHECK_UPDATES = false; // iggygram: no updates from Telegram
     public static boolean NO_SCOPED_STORAGE = Build.VERSION.SDK_INT <= 29;
     public static String BUILD_VERSION_STRING = BuildConfig.BUILD_VERSION_STRING;
 
-    public static int APP_ID = 4;
-    public static String APP_HASH = "014b35b6184100b085b0d0572f9b5103";
+    // iggygram: the server does not check api_id; not Telegram's own.
+    public static int APP_ID = 1;
+    public static String APP_HASH = "00000000000000000000000000000000";
 
     // SafetyNet key for Google Identity SDK, set it to empty to disable
     public static String SAFETYNET_KEY = "AIzaSyDqt8P-7F7CPCseMkOiVRgb1LY8RN1bvH8";

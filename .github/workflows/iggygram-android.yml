@@ -1,0 +1,116 @@
+# Builds Telegram for Android for the iggygram server: an APK for phones
+# (arm64-v8a and armeabi-v7a).
+#
+# Lives in a fork of DrKLO/Telegram, branch `iggygram` (commit 7be672e, layer
+# 233, with docs/android.patch applied), as
+# .github/workflows/iggygram-android.yml; see docs/CLIENTS.md.
+#
+# Repository secrets:
+#   IGGYGRAM_DC_IP, IGGYGRAM_DC_PORT  the address clients connect to;
+#   ANDROID_KEYSTORE_BASE64           the signing key (base64 of a .jks);
+#   ANDROID_KEYSTORE_PASSWORD         its password (store and key);
+#   ANDROID_KEY_ALIAS                 its alias.
+# Without the keystore secrets the repository's public test key signs the
+# APK: it installs, but anyone could sign an "update" of it.
+
+name: iggygram Android
+
+on:
+  workflow_dispatch:
+
+jobs:
+  android:
+    name: Android APK
+    runs-on: ubuntu-latest
+    timeout-minutes: 240
+
+    steps:
+      # The image has far more software than this build needs.
+      - name: Free disk space.
+        run: |
+          df -h /
+          sudo rm -rf /usr/share/dotnet /opt/ghc /usr/local/share/boost /usr/local/.ghcup "$AGENT_TOOLSDIRECTORY/CodeQL" || true
+          df -h /
+
+      - name: Clone.
+        uses: actions/checkout@v7
+        with:
+          submodules: recursive
+          fetch-depth: 1
+
+      - name: Server address.
+        env:
+          DC_IP: ${{ secrets.IGGYGRAM_DC_IP }}
+          DC_PORT: ${{ secrets.IGGYGRAM_DC_PORT }}
+        run: |
+          if [ -z "$DC_IP" ] || [ -z "$DC_PORT" ]; then
+            echo "Set the repository secrets IGGYGRAM_DC_IP and IGGYGRAM_DC_PORT." >&2
+            exit 1
+          fi
+          FILE=TMessagesProj/jni/tgnet/ConnectionsManager.cpp
+          sed -i "s/IGGYGRAM_DC_IP/$DC_IP/; s/IGGYGRAM_DC_PORT/$DC_PORT/g" "$FILE"
+          if grep -q IGGYGRAM_DC "$FILE"; then
+            echo "The address was not put in." >&2
+            exit 1
+          fi
+
+      # Passwords go to Gradle as -P (they override gradle.properties and
+      # need no escaping); one password for the store and the key, as
+      # keytool makes PKCS12 stores.
+      - name: Signing key.
+        env:
+          KEYSTORE: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+        run: |
+          if [ -n "$KEYSTORE" ] && [ -n "$PASSWORD" ] && [ -n "$ALIAS" ]; then
+            echo "$KEYSTORE" | base64 -d > TMessagesProj/config/release.keystore
+            echo "OWN_KEY=1" >> "$GITHUB_ENV"
+            echo "Signing with the repository's own key."
+          else
+            echo "::warning::No signing key in secrets: the APK is signed with the public test key."
+          fi
+
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      # As the official Dockerfile: SDK 36, NDK 27.2.12479018, CMake 3.22.1.
+      - name: Android SDK.
+        run: |
+          SDKMANAGER="$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager"
+          yes | "$SDKMANAGER" --licenses > /dev/null
+          "$SDKMANAGER" "build-tools;36.0.0" "platforms;android-36" "platform-tools" \
+            "ndk;27.2.12479018" "cmake;3.22.1" > /dev/null
+          echo "sdk.dir=$ANDROID_HOME" > local.properties
+
+      - name: Build.
+        env:
+          PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+        run: |
+          SIGNING=()
+          if [ "$OWN_KEY" = 1 ]; then
+            SIGNING=("-PRELEASE_STORE_PASSWORD=$PASSWORD" "-PRELEASE_KEY_PASSWORD=$PASSWORD" "-PRELEASE_KEY_ALIAS=$ALIAS")
+          fi
+          ./gradlew --no-daemon "${SIGNING[@]}" :TMessagesProj_App:assembleAfatRelease --stacktrace
+
+      - name: Collect the APK.
+        run: |
+          APK=$(find TMessagesProj_App/build/outputs/apk -name '*.apk' | head -n 1)
+          if [ -z "$APK" ]; then
+            echo "No APK was built." >&2
+            exit 1
+          fi
+          mkdir artifact
+          cp "$APK" artifact/iggygram.apk
+          # The certificate's SHA-256: the same in every build signed with the same key.
+          "$ANDROID_HOME/build-tools/36.0.0/apksigner" verify --print-certs artifact/iggygram.apk | grep -i sha-256
+          ls -la artifact
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: iggygram-android
+          path: artifact/
+          retention-days: 14

@@ -898,6 +898,12 @@ public class ConnectionsManager extends BaseController {
     }
 
     public static void onRequestNewServerIpAndPort(final int second, final int currentAccount) {
+        // iggygram: never ask Google's and Cloudflare's DNS for Telegram's
+        // fallback addresses: useless for this server, and it tells them that
+        // the client runs.
+        if (true) {
+            return;
+        }
         Utilities.globalQueue.postRunnable(() -> {
             boolean networkOnline = ApplicationLoader.isNetworkOnline();
             Utilities.stageQueue.postRunnable(() -> {
